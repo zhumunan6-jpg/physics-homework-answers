@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1762b0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="物理作业答案">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>物理作业答案</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-192.png">
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="brand"><img src="./icon-192.png" alt="" width="34" height="34"><h1>物理作业答案</h1></div><button id="help" class="quiet" aria-label="使用说明">使用说明</button></header>
+<main>
+<section class="search-panel" aria-label="搜索作业题">
+<form id="search-form"><label for="query">输入作业次数和题号</label><div class="search-row"><input id="query" type="text" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="例如：11 3" aria-describedby="search-hint" required><button type="submit" class="primary">查答案</button></div><p id="search-hint" class="hint">第 11～18 次作业，也可输入「第十一次作业 第3题」</p></form>
+<p id="message" role="status" aria-live="polite" hidden></p><div id="choices" hidden></div>
+<details id="picker"><summary>按题号选择</summary><div class="pick-row"><label for="assignment">作业</label><select id="assignment" aria-label="选择作业次数"></select><span id="topic"></span></div><div id="question-grid" aria-label="选择题号"></div><p id="index-note" class="hint"></p></details>
+</section>
+<section class="reader-panel" aria-label="原稿阅读器">
+<div class="result"><div><h2 id="result-title">正在加载题目索引…</h2><p id="result-subtitle">保留原稿版式，可放大阅读</p></div><div class="zoom"><button id="zoom-out" aria-label="缩小">−</button><button id="zoom-reset" aria-label="恢复适合宽度">100%</button><button id="zoom-in" aria-label="放大">＋</button></div></div>
+<div id="reader" tabindex="0" aria-label="作业原页，支持滚动与缩放"><div id="paper-stack"></div></div>
+<div class="pager"><button id="prev-page" class="quiet" aria-label="上一页">上一页</button><label for="page-select">PDF 第 <select id="page-select" aria-label="选择PDF页码"></select> 页</label><button id="next-page" class="quiet" aria-label="下一页">下一页</button></div>
+</section>
+<p class="footnote">只索引正式作业题 · 原页中的补充练习未编入搜索</p>
+</main>
+<dialog id="help-dialog"><div class="dialog-head"><h2>使用说明</h2><button id="close-help" class="quiet">关闭</button></div><p>输入两个数字即可查题，例如 <strong>11 3</strong> 表示第 11 次作业第 3 题。也支持 11-3、11次3题、中文次数，或展开“按题号选择”。</p><p>黄色横线标出题目起始位置。向下滚动可继续看跨页解析；点“＋”放大后可左右移动，也可用双指缩放页面。</p><p><strong>添加到 iPhone 主屏幕：</strong>用 Safari 打开本站，点分享按钮，再选“添加到主屏幕”。名称为“物理作业答案”。</p><p>首次使用需联网。已打开的原页会尝试保存在本机缓存中；系统清理缓存后需重新联网加载。</p><p><strong>原稿题号说明：</strong>第 12 次缺第 18 题；第 13 次有两道第 23 题、未标第 24 题，搜索时会提示选择。第 18 次带星号的第 24 题仍属作业，已收录。第 13 次第 22 题为图片，已人工定位。</p><p>本站仅提供原稿查询，未校正原文答案。原资料由仲英学业辅导中心编写，作者：刘锦天、肖追日、雷子妍，版权归原作者所有。</p><p class="hint">仅发布 PDF 第 5～82 页的作业原页图像。无登录、统计或外部字体；查题记录只保存在当前设备。GitHub Pages 托管服务仍可能保留访问日志。</p></dialog>
+</body>
+</html>

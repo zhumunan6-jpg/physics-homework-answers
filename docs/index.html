@@ -13,8 +13,9 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" href="./icon-192.png">
-<link rel="stylesheet" href="./style.css">
-<script src="./app.js" defer></script>
+<link rel="stylesheet" href="./style.css?v=2">
+<script src="./index-data.js?v=2" defer></script>
+<script src="./app.js?v=2" defer></script>
 </head>
 <body>
 <header class="top"><div class="brand"><img src="./icon-192.png" alt="" width="34" height="34"><h1>物理作业答案</h1></div><button id="help" class="quiet" aria-label="使用说明">使用说明</button></header>
@@ -26,6 +27,7 @@
 </section>
 <section class="reader-panel" aria-label="原稿阅读器">
 <div class="result"><div><h2 id="result-title">正在加载题目索引…</h2><p id="result-subtitle">保留原稿版式，可放大阅读</p></div><div class="zoom"><button id="zoom-out" aria-label="缩小">−</button><button id="zoom-reset" aria-label="恢复适合宽度">100%</button><button id="zoom-in" aria-label="放大">＋</button></div></div>
+<p id="loading-status" role="status" aria-live="polite"></p>
 <div id="reader" tabindex="0" aria-label="作业原页，支持滚动与缩放"><div id="paper-stack"></div></div>
 <div class="pager"><button id="prev-page" class="quiet" aria-label="上一页">上一页</button><label for="page-select">PDF 第 <select id="page-select" aria-label="选择PDF页码"></select> 页</label><button id="next-page" class="quiet" aria-label="下一页">下一页</button></div>
 </section>

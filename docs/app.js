@@ -1,7 +1,36 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const reader = $('reader'), stack = $('paper-stack');
+if (location.protocol === 'http:' && location.hostname.endsWith('.github.io')) location.replace(location.href.replace(/^http:/,'https:'));
 let data, active, zoom = 1, currentPage = 5, scrollTick = false;
+let warmTimer;
+function loadPage(n, priority = 'high') {
+ const paper = $(`page-${n}`); if (!paper) return;
+ const img = paper.querySelector('img');
+ const path = `./${zoom > 1 ? 'pages' : 'pages-mobile'}/${String(n).padStart(3,'0')}.webp`;
+ img.fetchPriority = priority;
+ if (img.dataset.path === path) return;
+ img.dataset.path = path; paper.classList.remove('failed'); paper.classList.add('loading');
+ if (n === currentPage) $('loading-status').textContent = '正在加载原页…';
+ img.src = path;
+}
+function loadWindow(n) {
+ clearTimeout(warmTimer);
+ loadPage(n);
+ // Bound decoded image memory on iOS; keep placeholders so page positions stay stable.
+ for (const img of stack.querySelectorAll('img[data-path]')) {
+  const page = Number(img.closest('.paper').id.slice(5));
+  if (Math.abs(page-n) > 2) { delete img.dataset.path; img.removeAttribute('src'); img.closest('.paper').classList.remove('loading','failed'); }
+ }
+ warmTimer = setTimeout(()=>{ loadPage(n+1,'low'); },350);
+}
+function finishPage(img, failed = false) {
+ if (!img.dataset.path) return;
+ const paper = img.closest('.paper'); paper.classList.remove('loading'); paper.classList.toggle('failed',failed);
+ const n = Number(paper.id.slice(5));
+ if (n === currentPage) $('loading-status').textContent = failed ? '原页加载失败，请检查网络后重试。' : '';
+}
+
 function message(text = '') { $('message').textContent = text; $('message').hidden = !text; }
 function save(value) { try { localStorage.setItem('physics-answer:last', JSON.stringify(value)); } catch {} }
 function chineseNumber(word) {
@@ -36,7 +65,7 @@ function updatePicker(number) {
 function pageTop(n) { const el = $(`page-${n}`); return el.getBoundingClientRect().top - reader.getBoundingClientRect().top + reader.scrollTop; }
 function updatePage(n) {
  currentPage = n; $('page-select').value = String(n);
- $('prev-page').disabled = n <= 5; $('next-page').disabled = n >= 82;
+ $('prev-page').disabled = n <= 5; $('next-page').disabled = n >= 82; loadWindow(n);
 }
 function goPage(n) {
  if (n < 5 || n > 82) return;
@@ -51,7 +80,7 @@ function openQuestion(record, updateHistory = true) {
  $('result-subtitle').textContent = `${chapter.title} / ${record.type}${record.note ? ' / '+record.note : ''}`;
  document.querySelector('.target-marker')?.remove();
  const paper = $(`page-${record.page}`), img = paper.querySelector('img');
- img.loading = 'eager';
+ 
  const marker = document.createElement('div'); marker.className = 'target-marker';
  marker.style.top = `${record.y * 100}%`; marker.setAttribute('aria-label',`第${record.question}题起始位置`); paper.append(marker);
  reader.scrollTop = pageTop(record.page) + paper.clientHeight * record.y - 24;
@@ -90,7 +119,7 @@ function changeZoom(next) {
  stack.style.width = `${zoom * 100}%`;
  $('zoom-reset').textContent = `${Math.round(zoom*100)}%`;
  $('zoom-out').disabled = zoom <= 1; $('zoom-in').disabled = zoom >= 3;
- reader.scrollTop = ratio * stack.scrollHeight; reader.scrollLeft = leftRatio * stack.scrollWidth;
+ reader.scrollTop = ratio * stack.scrollHeight; reader.scrollLeft = leftRatio * stack.scrollWidth; loadWindow(currentPage);
 }
 function restore() {
  const hash = new URLSearchParams(location.hash.slice(1));
@@ -101,16 +130,16 @@ function restore() {
 }
 async function init() {
  try {
-  const response = await fetch('./index-data.json'); if (!response.ok) throw new Error('index'); data = await response.json();
+  data = window.PHYSICS_INDEX; if (!data) throw new Error('index');
   for (const chapter of data.chapters) { const o = document.createElement('option'); o.value = chapter.number; o.textContent = `第${chapter.number}次`; $('assignment').append(o); }
   for (let n=5;n<=82;n++) {
    const option = document.createElement('option'); option.value=n; option.textContent=String(n); $('page-select').append(option);
    const paper = document.createElement('article'); paper.className='paper'; paper.id=`page-${n}`; paper.setAttribute('aria-label',`PDF第${n}页，书内第${n-4}页`);
-   const img = document.createElement('img'); img.src=`./pages/${String(n).padStart(3,'0')}.webp`; img.alt=`作业原稿：PDF第${n}页，书内第${n-4}页`; img.width=1667; img.height=2357; img.loading='lazy'; img.decoding='async';
+   const img = document.createElement('img'); img.alt=`作业原稿：PDF第${n}页，书内第${n-4}页`; img.width=1667; img.height=2357; img.loading='eager'; img.decoding='async';
    const error = document.createElement('div'); error.className='load-error';
    const text = document.createElement('p'); text.textContent='原页未加载。请检查网络后重试。';
-   const retry = document.createElement('button'); retry.textContent='重新加载'; retry.addEventListener('click',()=>{ paper.classList.remove('failed'); img.src=`./pages/${String(n).padStart(3,'0')}.webp?retry=${Date.now()}`; });
-   img.addEventListener('error',()=>paper.classList.add('failed')); img.addEventListener('load',()=>paper.classList.remove('failed'));
+   const retry = document.createElement('button'); retry.textContent='重新加载'; retry.addEventListener('click',()=>{ delete img.dataset.path; loadPage(n); });
+   img.addEventListener('error',()=>finishPage(img,true)); img.addEventListener('load',()=>finishPage(img));
    error.append(text,retry); paper.append(img,error); stack.append(paper);
   }
   $('search-form').addEventListener('submit',event=>{event.preventDefault(); const parsed=parseQuery($('query').value); if (!parsed) {message('请输入作业次数和题号，例如：11 3，或第十一次作业第3题。');$('choices').hidden=true;return;} $('query').blur();search(parsed.assignment,parsed.question);});
@@ -118,10 +147,10 @@ async function init() {
   $('page-select').addEventListener('change',()=>goPage(Number($('page-select').value)));
   $('prev-page').addEventListener('click',()=>goPage(currentPage-1)); $('next-page').addEventListener('click',()=>goPage(currentPage+1));
   $('zoom-in').addEventListener('click',()=>changeZoom(zoom+.25)); $('zoom-out').addEventListener('click',()=>changeZoom(zoom-.25)); $('zoom-reset').addEventListener('click',()=>changeZoom(1));
-  reader.addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{scrollTick=false;const pos=reader.scrollTop+24;let page=5;for(let n=5;n<=82;n++){if(pageTop(n)<=pos)page=n;else break;} updatePage(page);});},{passive:true});
+  reader.addEventListener('scroll',()=>{if(scrollTick)return;scrollTick=true;requestAnimationFrame(()=>{scrollTick=false;const stride=$('page-5').clientHeight+12; const page=Math.max(5,Math.min(82,5+Math.floor((reader.scrollTop+18)/stride))); if(page!==currentPage) updatePage(page);});},{passive:true});
   window.addEventListener('hashchange',restore);
   restore(); changeZoom(1);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
  } catch { $('result-title').textContent='索引加载失败'; message('请检查网络并刷新页面，首次打开需要联网。'); }
 }
 $('help').addEventListener('click',()=>$('help-dialog').showModal()); $('close-help').addEventListener('click',()=>$('help-dialog').close());
